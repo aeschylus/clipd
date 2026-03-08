@@ -1,44 +1,18 @@
-[package]
-name = "clipd"
-version = "0.1.0"
+[workspace]
+members = [
+    "clipd-core",
+    "clipd-cli",
+    "src-tauri",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.2.0"
 edition = "2021"
 authors = ["aeschylus"]
-description = "Headless cross-platform clipboard history daemon with metadata capture"
 license = "MIT"
 repository = "https://github.com/aeschylus/clipd"
-keywords = ["clipboard", "daemon", "history", "productivity"]
-categories = ["command-line-utilities"]
-
-[[bin]]
-name = "clipd"
-path = "src/main.rs"
-
-[dependencies]
-arboard = "3"
-rusqlite = { version = "0.31", features = ["bundled"] }
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
-toml = "1"
-clap = { version = "4", features = ["derive"] }
-chrono = { version = "0.4", features = ["serde"] }
-sha2 = "0.10"
-hex = "0.4"
-tokio = { version = "1", features = ["full"] }
-tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-regex = "1"
-dirs = "5"
-anyhow = "1"
-thiserror = "1"
-
-[target.'cfg(target_os = "macos")'.dependencies]
-# macOS app detection: uses `lsof` / `ps` approach via std::process
-# Full NSWorkspace bindings would require objc crate — see clipboard.rs comments
-
-[target.'cfg(target_os = "windows")'.dependencies]
-# Windows foreground window detection via winapi — see clipboard.rs comments
 
 [profile.release]
 opt-level = 3
 lto = true
-strip = true

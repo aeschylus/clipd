@@ -1,5 +1,4 @@
 /target/
-Cargo.lock
 *.db
 *.db-shm
 *.db-wal
@@ -7,3 +6,10 @@ Cargo.lock
 *.pid
 .DS_Store
 .env
+
+# Tauri
+src-tauri/target/
+src-tauri/WixTools/
+
+# Node (for tauri dev)
+node_modules/

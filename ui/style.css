@@ -1,0 +1,363 @@
+/* ─── Reset & tokens ───────────────────────────────────────────────────────── */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  /* Bisque dark palette */
+  --bg-base:       #09090b;
+  --bg-panel:      rgba(12, 12, 15, 0.92);
+  --bg-item:       rgba(255, 255, 255, 0.04);
+  --bg-item-hover: rgba(255, 255, 255, 0.08);
+  --bg-item-sel:   rgba(99, 102, 241, 0.25);
+  --border:        rgba(255, 255, 255, 0.08);
+  --border-focus:  rgba(99, 102, 241, 0.6);
+
+  --text-primary:   #f4f4f5;
+  --text-secondary: #a1a1aa;
+  --text-muted:     #52525b;
+  --accent:         #6366f1;
+  --accent-hover:   #818cf8;
+  --danger:         #ef4444;
+
+  --radius-panel: 14px;
+  --radius-item:   8px;
+  --font:          -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+  --font-mono:     "SF Mono", "Fira Code", "Cascadia Code", monospace;
+}
+
+/* ─── Root & body ──────────────────────────────────────────────────────────── */
+
+html, body {
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  font-family: var(--font);
+  font-size: 13px;
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* ─── App container ─────────────────────────────────────────────────────────── */
+
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-panel);
+  overflow: hidden;
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  box-shadow:
+    0 32px 64px rgba(0, 0, 0, 0.6),
+    0 0 0 0.5px rgba(255, 255, 255, 0.06) inset;
+}
+
+/* ─── Search bar ────────────────────────────────────────────────────────────── */
+
+#search-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.search-icon {
+  color: var(--text-muted);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+#search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-family: var(--font);
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  caret-color: var(--accent);
+}
+
+#search-input::placeholder {
+  color: var(--text-muted);
+}
+
+.esc-hint {
+  color: var(--text-muted);
+  font-size: 10px;
+  font-family: var(--font);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 5px;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+#search-input:focus + .esc-hint,
+.esc-hint.visible {
+  opacity: 1;
+}
+
+/* ─── Clip list ─────────────────────────────────────────────────────────────── */
+
+#clip-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px;
+  scroll-behavior: smooth;
+}
+
+/* Scrollbar */
+#clip-list::-webkit-scrollbar {
+  width: 4px;
+}
+#clip-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+#clip-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+}
+#clip-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+/* ─── Clip item ─────────────────────────────────────────────────────────────── */
+
+.clip-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: var(--radius-item);
+  cursor: pointer;
+  transition:
+    background 0.1s ease,
+    box-shadow 0.1s ease;
+  position: relative;
+}
+
+.clip-item:hover {
+  background: var(--bg-item-hover);
+}
+
+.clip-item.selected {
+  background: var(--bg-item-sel);
+  box-shadow: 0 0 0 1px var(--border-focus);
+}
+
+.clip-item.pinned .clip-preview::after {
+  content: " 📌";
+  font-size: 10px;
+}
+
+/* Type icon */
+.clip-type-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  margin-top: 1px;
+}
+
+.clip-type-icon.type-url    { color: #38bdf8; }
+.clip-type-icon.type-code   { color: #a78bfa; font-family: var(--font-mono); font-size: 11px; }
+.clip-type-icon.type-folder { color: #fbbf24; }
+.clip-type-icon.type-image  { color: #34d399; }
+.clip-type-icon.type-text   { color: var(--text-secondary); }
+
+/* Content */
+.clip-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.clip-preview {
+  font-size: 13px;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+}
+
+.clip-item.type-code .clip-preview {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: #c4b5fd;
+}
+
+.clip-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1;
+}
+
+.clip-app {
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
+.clip-separator {
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.clip-label {
+  color: var(--accent);
+  font-size: 11px;
+  font-style: italic;
+}
+
+/* Delete button (shows on hover/selected) */
+.clip-delete {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: var(--danger);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: opacity 0.1s ease, background 0.1s ease;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.clip-item:hover .clip-delete,
+.clip-item.selected .clip-delete {
+  opacity: 1;
+}
+
+.clip-delete:hover {
+  background: rgba(239, 68, 68, 0.3);
+}
+
+/* ─── Empty state ────────────────────────────────────────────────────────────── */
+
+#empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 8px;
+  padding: 32px;
+  text-align: center;
+}
+
+#empty-state.hidden {
+  display: none;
+}
+
+.empty-icon {
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+#empty-message {
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.empty-sub {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+/* ─── Status bar ─────────────────────────────────────────────────────────────── */
+
+#status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 14px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+#clip-count {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+#shortcut-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+#shortcut-hint kbd {
+  font-family: var(--font);
+  font-size: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 4px;
+  color: var(--text-secondary);
+}
+
+/* ─── Utility ────────────────────────────────────────────────────────────────── */
+
+.hidden { display: none !important; }
+
+/* Highlight matched search text */
+mark {
+  background: rgba(99, 102, 241, 0.35);
+  color: var(--text-primary);
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
+/* Fade-in animation for list items */
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.clip-item {
+  animation: fadeSlideIn 0.12s ease both;
+}

@@ -1,0 +1,30 @@
+[package]
+name = "clipd"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Headless cross-platform clipboard history daemon with metadata capture"
+keywords = ["clipboard", "daemon", "history", "productivity"]
+categories = ["command-line-utilities"]
+
+[[bin]]
+name = "clipd"
+path = "src/main.rs"
+
+[dependencies]
+clipd-core = { path = "../clipd-core" }
+clap = { version = "4", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+anyhow = "1"
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
+[profile.release]
+opt-level = 3
+lto = true
+strip = true

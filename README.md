@@ -1,72 +1,68 @@
 # clipd
 
-**Headless cross-platform clipboard history daemon with metadata capture.**
+**Clipboard history manager with global hotkey, floating panel UI, and headless daemon.**
 
-Inspired by [Paste.app](https://pasteapp.io/) — the gold-standard clipboard manager for Mac/iOS — but designed for server-side tooling, terminal-centric workflows, and environments where a GUI is unavailable or unwanted.
-
----
-
-## What is clipd?
-
-Every time you press Cmd+C (or Ctrl+C), `clipd` silently captures the clipboard content and stores it with rich metadata:
-
-- **Timestamp** — when the copy happened
-- **Source app** — which application was frontmost (Safari, VS Code, Terminal, etc.)
-- **Content type** — automatically classified as URL, file path, code, or plain text
-- **SHA-256 hash** — for instant deduplication (copying the same text twice creates one entry)
-- **Pinboard-style pinning** — mark important clips so they survive history eviction
-- **Tags and labels** — organise clips just like Paste.app's pinboards
-
-All data is stored locally in SQLite. No cloud. No telemetry.
+clipd stores every clipboard copy locally with rich metadata — source app, timestamp, content type — and puts it at your fingertips with a global hotkey (Cmd+Shift+V) and a dark, search-driven floating panel.
 
 ---
 
-## How it compares to Paste.app
+## Quick install (macOS)
 
-| Feature | Paste.app | clipd |
-|---|---|---|
-| Clipboard history | Yes | Yes |
-| Source app capture | Yes | Yes |
-| Content type detection | Yes | Yes (URL, code, file path, text) |
-| Search | Yes (FTS + OCR) | Yes (SQLite FTS5) |
-| Pinboards | Yes (visual) | Yes (pin + tag via CLI) |
-| iCloud sync | Yes | No (local-only by design) |
-| GUI | Yes (beautiful) | No (headless by design) |
-| iOS / iPad | Yes | No |
-| REST API | No | Planned |
-| Lobster integration | No | Planned |
-| Cross-platform | macOS + iOS | macOS + Windows + Linux |
-| Price | Subscription | Free / open source |
-
-**clipd's niche:** CI servers, headless Macs, remote dev machines, dotfiles setups, and anywhere you want Paste.app's *functionality* without its *interface*.
-
----
-
-## Installation
-
-### Prerequisites
-
-- Rust 1.75+ (`curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`)
-- On Linux: `libx11-dev` (for arboard X11 support)
-- On Linux (optional): `xdotool` for source app detection
-
-### Build from source
+### Homebrew (CLI only)
 
 ```bash
-git clone https://github.com/aeschylus/clipd
-cd clipd
-cargo install --path .
+brew tap aeschylus/clipd
+brew install clipd
+clipd daemon start
 ```
 
-### macOS Permissions
+### macOS App (menu bar + global hotkey)
 
-On macOS 14+, `clipd` needs:
-- **Accessibility / Automation** (for source app name via `lsappinfo`) — grant in System Settings → Privacy & Security → Automation
-- No special permissions needed for clipboard access itself
+Download the latest `clipd.app.dmg` from [Releases](https://github.com/aeschylus/clipd/releases) and drag to Applications.
+
+Or build from source (see below).
 
 ---
 
-## Usage
+## What's in the box
+
+| Component | What it does |
+|---|---|
+| `clipd-core` | Rust library: clipboard polling daemon, SQLite store, models |
+| `clipd` (CLI) | Full-featured terminal interface: list, search, pin, tag, export |
+| `clipd.app` | macOS app: menu bar icon, global hotkey, dark floating panel UI |
+
+---
+
+## macOS App
+
+### Usage
+
+- **Cmd+Shift+V** — toggle the clipboard panel
+- **Left-click tray icon** — toggle panel
+- **Right-click tray icon** — menu (Show / Quit)
+
+### Panel controls
+
+| Key | Action |
+|---|---|
+| Type anything | Search clipboard history (real-time FTS) |
+| Arrow Up / Down | Navigate list |
+| Enter | Paste selected clip |
+| Cmd+Delete | Delete selected clip |
+| Escape | Dismiss panel |
+| Click item | Paste and dismiss |
+
+### Permissions (macOS)
+
+- **Automation / AppleEvents** — for detecting which app you copied from (`lsappinfo`)
+- **Accessibility** — for the auto-paste feature (Cmd+V simulation via osascript)
+
+Grant in: *System Settings → Privacy & Security → Accessibility / Automation → clipd*
+
+---
+
+## CLI
 
 ### Start the daemon
 
@@ -74,88 +70,71 @@ On macOS 14+, `clipd` needs:
 # Background (default)
 clipd daemon start
 
-# Foreground — useful for systemd/launchd or debugging
+# Foreground — useful for launchd or debugging
 clipd daemon start --foreground
-```
-
-### Check status
-
-```bash
-clipd daemon status
-# daemon: running (PID 12345)
-# clips stored: 1423
-# database: /Users/you/.local/share/clipd/history.db
 ```
 
 ### Browse history
 
 ```bash
-# Last 20 clips (default)
+# Last 20 clips
 clipd list
-
-# More clips
-clipd list --limit 100
 
 # Search
 clipd list --search "github.com"
 clipd list --search "def main"
 
-# JSON output (pipe-friendly)
+# JSON output
 clipd list --format json | jq '.[0]'
 ```
 
-### Get full content of a clip
+### Get full content
 
 ```bash
 clipd get 42
-
-# Raw content only (pipe-friendly)
 clipd get 42 --raw | pbcopy
-clipd get 42 --raw | xclip -selection clipboard
 ```
 
-### Pin a clip (protect from eviction)
+### Organize
 
 ```bash
-clipd pin 42
+clipd pin 42            # protect from eviction
 clipd pin 42 --unpin
-```
-
-### Tag and label clips
-
-```bash
-# Add tags
 clipd tag 42 work
-clipd tag 42 important
-
-# Set a human-readable label (like Paste.app's rename)
 clipd label 42 "API key format"
-clipd label 42  # (no label text = clear label)
-```
-
-### Delete a clip
-
-```bash
 clipd delete 42
 ```
 
-### Export history
+### Export
 
 ```bash
-# JSON (default)
-clipd export > ~/clipboard-backup.json
-
-# CSV
-clipd export --format csv > ~/clipboard-backup.csv
-
-# Last 500 clips only
-clipd export --limit 500
+clipd export > backup.json
+clipd export --format csv > backup.csv
 ```
 
-### Stop the daemon
+### Stop
 
 ```bash
 clipd daemon stop
+```
+
+---
+
+## Configuration
+
+`~/.config/clipd/config.toml` (all fields optional):
+
+```toml
+poll_interval_ms = 500
+max_history = 10000
+min_content_len = 2
+
+ignored_apps = [
+    "1Password",
+    "Bitwarden",
+    "LastPass",
+    "KeePassXC",
+]
 ```
 
 ---
@@ -164,46 +143,83 @@ clipd daemon stop
 
 | Path | Purpose |
 |---|---|
-| `~/.local/share/clipd/history.db` | SQLite database (WAL mode) |
+| `~/.local/share/clipd/history.db` | SQLite (WAL mode) |
 | `~/.config/clipd/config.toml` | Configuration |
 | `~/.local/share/clipd/clipd.log` | Daemon log |
-| `~/.local/run/clipd/clipd.pid` | PID file (runtime) |
 
 ---
 
-## Configuration
+## Building from source
 
-`~/.config/clipd/config.toml` — all fields are optional (sensible defaults apply):
+### Prerequisites
 
-```toml
-# How often to check clipboard for changes (milliseconds)
-poll_interval_ms = 500
+- **Rust 1.75+**: `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`
+- **Node.js 18+** (for Tauri CLI): `brew install node`
+- **Tauri CLI v2**: `cargo install tauri-cli --version "^2"`
+- **Xcode Command Line Tools** (macOS): `xcode-select --install`
 
-# Maximum non-pinned history entries
-max_history = 10000
+### Build the CLI only
 
-# Ignore copies shorter than this (prevents single-char noise)
-min_content_len = 2
+```bash
+git clone https://github.com/aeschylus/clipd
+cd clipd
+cargo build --release --package clipd
+./target/release/clipd --version
+```
 
-# Apps whose clipboard writes are never stored (password managers, etc.)
-ignored_apps = [
-    "1Password",
-    "Bitwarden",
-    "LastPass",
-    "KeePassXC",
-    "Keychain",
-]
+### Build the macOS app
 
-# Override storage paths (optional)
-# db_path = "/custom/path/history.db"
-# log_path = "/custom/path/clipd.log"
+```bash
+git clone https://github.com/aeschylus/clipd
+cd clipd
+cargo tauri build
+# Output: target/release/bundle/macos/clipd.app
+open target/release/bundle/macos/
+```
+
+### Development mode (hot reload)
+
+```bash
+cargo tauri dev
 ```
 
 ---
 
-## Running as a service
+## Workspace structure
 
-### macOS (launchd)
+```
+clipd/
+├── Cargo.toml          # workspace root
+├── clipd-core/         # shared library (daemon, store, models, config)
+│   ├── Cargo.toml
+│   └── src/
+│       ├── lib.rs
+│       ├── clipboard.rs   # polling, content-type detection, source-app
+│       ├── config.rs      # Config struct, load/save, directory resolution
+│       ├── daemon.rs      # async polling loop, PID management
+│       ├── models.rs      # ClipEntry, ContentType
+│       └── store.rs       # SQLite store with FTS5
+├── clipd-cli/          # `clipd` binary (depends on clipd-core)
+│   ├── Cargo.toml
+│   └── src/main.rs
+├── src-tauri/          # Tauri macOS app shell
+│   ├── Cargo.toml
+│   ├── build.rs
+│   ├── tauri.conf.json  # window config, bundle id, tray
+│   └── src/
+│       ├── main.rs      # Tauri app setup, tray, global shortcut
+│       └── commands.rs  # IPC: list_clips, search_clips, paste_clip, …
+├── ui/                 # Vanilla JS + CSS frontend
+│   ├── index.html
+│   ├── style.css       # Dark Bisque aesthetic (#09090b)
+│   └── main.js         # Search, list rendering, keyboard nav
+└── Formula/
+    └── clipd.rb        # Homebrew formula
+```
+
+---
+
+## Running as a service (macOS launchd)
 
 Create `~/Library/LaunchAgents/ai.clipd.plist`:
 
@@ -213,8 +229,7 @@ Create `~/Library/LaunchAgents/ai.clipd.plist`:
   "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>Label</key>
-    <string>ai.clipd</string>
+    <key>Label</key><string>ai.clipd</string>
     <key>ProgramArguments</key>
     <array>
         <string>/usr/local/bin/clipd</string>
@@ -222,14 +237,8 @@ Create `~/Library/LaunchAgents/ai.clipd.plist`:
         <string>start</string>
         <string>--foreground</string>
     </array>
-    <key>RunAtLoad</key>
-    <true/>
-    <key>KeepAlive</key>
-    <true/>
-    <key>StandardOutPath</key>
-    <string>/Users/you/.local/share/clipd/clipd.log</string>
-    <key>StandardErrorPath</key>
-    <string>/Users/you/.local/share/clipd/clipd.log</string>
+    <key>RunAtLoad</key><true/>
+    <key>KeepAlive</key><true/>
 </dict>
 </plist>
 ```
@@ -238,55 +247,38 @@ Create `~/Library/LaunchAgents/ai.clipd.plist`:
 launchctl load ~/Library/LaunchAgents/ai.clipd.plist
 ```
 
-### Linux (systemd user service)
-
-Create `~/.config/systemd/user/clipd.service`:
-
-```ini
-[Unit]
-Description=clipd clipboard history daemon
-After=graphical-session.target
-
-[Service]
-ExecStart=%h/.cargo/bin/clipd daemon start --foreground
-Restart=on-failure
-Environment=DISPLAY=:0
-
-[Install]
-WantedBy=default.target
-```
-
-```bash
-systemctl --user enable --now clipd
-```
+Note: The `clipd.app` already auto-starts its own embedded daemon — you only need the launchd plist when using the headless CLI daemon without the app.
 
 ---
 
-## Platform Notes
+## Comparison with Paste.app
 
-### macOS
-- Source app detection uses `lsappinfo front` (no extra permissions required for app name)
-- Full NSWorkspace integration via `objc` crate is planned for image clipboard support
-
-### Linux
-- Source app detection uses `xdotool getactivewindow getwindowname` (X11) or `qdbus` (KDE/Wayland)
-- `arboard` requires an X11 or Wayland display; on headless servers set `DISPLAY=:0` or use a virtual framebuffer
-
-### Windows
-- Source app detection via PowerShell + `GetForegroundWindow`
-- Daemon start uses process detach; no Windows Service setup required for personal use
+| Feature | Paste.app | clipd |
+|---|---|---|
+| Clipboard history | Yes | Yes |
+| Source app capture | Yes | Yes |
+| Content type detection | Yes | Yes |
+| Full-text search | Yes | Yes (SQLite FTS5) |
+| Global hotkey | Yes | Yes (Cmd+Shift+V) |
+| Floating panel | Yes (beautiful) | Yes (dark minimal) |
+| Menu bar app | Yes | Yes |
+| Pinboards / tags | Yes (visual) | Yes (CLI + panel) |
+| iCloud sync | Yes | No (local-only) |
+| iOS / iPad | Yes | No |
+| Cross-platform | macOS + iOS | macOS + Linux + Windows (CLI) |
+| Price | Subscription | Free / open source |
 
 ---
 
 ## Roadmap
 
-- [ ] REST API server (`clipd serve`) for programmatic access
-- [ ] Lobster skill integration (search clipboard from Telegram)
-- [ ] Image clipboard support (arboard image API)
-- [ ] Shared pinboards via Git sync
-- [ ] Browser extension for enriched URL metadata (title, favicon)
-- [ ] `clipd watch` — stream new clips in real time (WebSocket)
+- [ ] REST API (`clipd serve`) for programmatic access
+- [ ] Configurable hotkey in `config.toml`
+- [ ] Image clipboard support
+- [ ] Lobster Telegram skill integration
+- [ ] Browser extension for enriched URL metadata
 - [ ] Encryption at rest (SQLCipher)
+- [ ] Shared pinboards via Git sync
 
 ---
 

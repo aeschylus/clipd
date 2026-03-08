@@ -2,15 +2,9 @@ use anyhow::{bail, Context, Result};
 use clap::{Parser, Subcommand};
 use std::process;
 
-mod clipboard;
-mod config;
-mod daemon;
-mod models;
-mod store;
-
-use config::Config;
-use daemon::{process_alive, read_pid, remove_pid, write_pid};
-use store::Store;
+use clipd_core::config::{self, Config};
+use clipd_core::daemon::{process_alive, read_pid, remove_pid, write_pid};
+use clipd_core::store::Store;
 
 // ─── CLI definition ─────────────────────────────────────────────────────────
 
@@ -284,7 +278,7 @@ fn start_daemon_foreground(config: Config) -> Result<()> {
         .enable_all()
         .build()
         .context("building Tokio runtime")?;
-    rt.block_on(daemon::run(config))
+    rt.block_on(clipd_core::daemon::run(config))
 }
 
 /// On Unix, re-exec the current binary with `daemon start --foreground`,
@@ -444,7 +438,7 @@ fn handle_label(id: i64, label: Option<String>, config: &Config) -> Result<()> {
     let store = Store::open(&config.db_path)?;
     store.set_label(id, label.as_deref())?;
     match label {
-        Some(l) => println!("labelled clip {} as \"{}\"", id, l),
+        Some(l) => println!("labelled clip {} as \"{}\"", l, l),
         None => println!("cleared label on clip {}", id),
     }
     Ok(())
