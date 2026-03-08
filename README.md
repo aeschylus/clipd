@@ -8,12 +8,12 @@ clipd stores every clipboard copy locally with rich metadata — source app, tim
 
 ## Quick install (macOS)
 
-### Homebrew (CLI only)
+### Homebrew (CLI daemon)
 
 ```bash
 brew tap aeschylus/clipd
-brew install clipd
-clipd daemon start
+brew install --HEAD aeschylus/clipd/clipd
+brew services start aeschylus/clipd/clipd
 ```
 
 ### macOS App (menu bar + global hotkey)
@@ -185,7 +185,39 @@ cargo tauri dev
 
 ---
 
-## Workspace structure
+## Contributing
+
+**All builds are local. There are no GitHub Actions or CI runners.**
+
+This is intentional — builds are fast enough locally and the project doesn't need cloud compute for routine development. Don't add GitHub Actions workflows.
+
+### Getting started on any Debian/Ubuntu server
+
+```bash
+git clone https://github.com/aeschylus/clipd
+cd clipd
+./scripts/build.sh          # builds the CLI binary
+./scripts/build.sh --install  # builds + installs to /usr/local/bin
+```
+
+The script handles Rust installation and system dependencies automatically.
+
+### Getting started on macOS
+
+```bash
+git clone https://github.com/aeschylus/clipd
+cd clipd
+
+# CLI only (fast)
+cargo build --release --package clipd
+
+# Full app (requires Tauri CLI)
+cargo install tauri-cli --version "^2"
+cargo tauri dev   # dev mode with hot reload
+cargo tauri build # production .app bundle
+```
+
+### Project layout
 
 ```
 clipd/
@@ -213,9 +245,18 @@ clipd/
 │   ├── index.html
 │   ├── style.css       # Dark Bisque aesthetic (#09090b)
 │   └── main.js         # Search, list rendering, keyboard nav
+├── scripts/
+│   └── build.sh        # Debian/Ubuntu build script
 └── Formula/
-    └── clipd.rb        # Homebrew formula
+    └── clipd.rb        # Homebrew formula (tap: aeschylus/clipd)
 ```
+
+### Guidelines
+
+- Keep `clipd-core` platform-agnostic (no macOS-only imports)
+- macOS-specific code goes in `src-tauri/` or behind `#[cfg(target_os = "macos")]`
+- No unwrap() in library code — propagate errors with `anyhow`
+- Test the daemon with `clipd daemon start --foreground` and watch the log
 
 ---
 
