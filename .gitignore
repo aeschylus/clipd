@@ -1,0 +1,9 @@
+/target/
+Cargo.lock
+*.db
+*.db-shm
+*.db-wal
+*.log
+*.pid
+.DS_Store
+.env
